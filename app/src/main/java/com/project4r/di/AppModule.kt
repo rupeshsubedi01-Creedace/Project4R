@@ -20,7 +20,8 @@ import javax.inject.Singleton
 @InstallIn(SingletonComponent::class)
 object AppModule {
 
-    private const val VERCEL_BASE_URL = "https://project4r-api.vercel.app/"
+    // ✅ Live Vercel backend
+    private const val VERCEL_BASE_URL = "https://project4-r.vercel.app/"
 
     @Provides @Singleton
     fun provideUserPreferences(@ApplicationContext context: Context): UserPreferences =
