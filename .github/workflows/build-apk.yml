@@ -1,0 +1,65 @@
+name: 🚀 Build Project 4R APK
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:   # lets you trigger manually from GitHub Mobile too
+
+jobs:
+  build:
+    name: Build Debug APK
+    runs-on: ubuntu-latest
+
+    steps:
+
+      # 1. Checkout code
+      - name: ⬇️ Checkout repository
+        uses: actions/checkout@v4
+
+      # 2. Set up Java 17
+      - name: ☕ Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: gradle
+
+      # 3. Create local.properties with dummy SDK path
+      #    (real API keys come from GitHub Secrets)
+      - name: 📝 Create local.properties
+        run: |
+          echo "sdk.dir=$ANDROID_SDK_ROOT" >> local.properties
+          echo "AMADEUS_CLIENT_ID=${{ secrets.AMADEUS_CLIENT_ID }}" >> local.properties
+          echo "AMADEUS_CLIENT_SECRET=${{ secrets.AMADEUS_CLIENT_SECRET }}" >> local.properties
+          echo "EXCHANGE_API_KEY=${{ secrets.EXCHANGE_API_KEY }}" >> local.properties
+
+      # 4. Make gradlew executable
+      - name: 🔑 Grant execute permission to gradlew
+        run: chmod +x gradlew
+
+      # 5. Build the debug APK
+      - name: 🔨 Build Debug APK
+        run: ./gradlew assembleDebug --no-daemon --stacktrace
+
+      # 6. Upload APK as artifact (downloadable from GitHub)
+      - name: 📦 Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Project4R-debug-${{ github.run_number }}
+          path: app/build/outputs/apk/debug/app-debug.apk
+          retention-days: 30
+
+      # 7. Post APK download link in the Actions summary
+      - name: 📋 Build summary
+        run: |
+          echo "## ✅ Build #${{ github.run_number }} complete!" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "📲 **Download APK:** Go to Actions tab → this run → Artifacts section" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Detail | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "|--------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Branch | ${{ github.ref_name }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Commit | ${{ github.sha }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Triggered by | ${{ github.actor }} |" >> $GITHUB_STEP_SUMMARY
