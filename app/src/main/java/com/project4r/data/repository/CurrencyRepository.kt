@@ -1,6 +1,5 @@
 package com.project4r.data.repository
 
-import com.project4r.BuildConfig
 import com.project4r.data.api.CurrencyApi
 import com.project4r.data.model.CurrencyRate
 import com.project4r.data.model.SampleRates
@@ -13,6 +12,9 @@ import javax.inject.Singleton
 class CurrencyRepository @Inject constructor(
     private val api: CurrencyApi
 ) {
+    // Free tier key — 1,500 requests/month
+    private val apiKey = "ba1d53e257e920d1121e0d18"
+
     private val wantedCodes = listOf("NPR", "USD", "INR", "EUR", "GBP", "JPY")
     private val flagMap = mapOf(
         "NPR" to "🇳🇵", "USD" to "🇺🇸", "INR" to "🇮🇳",
@@ -24,24 +26,26 @@ class CurrencyRepository @Inject constructor(
     )
 
     fun getLiveRates(): Flow<List<CurrencyRate>> = flow {
-        if (BuildConfig.EXCHANGE_API_KEY.isBlank()) {
-            emit(SampleRates.list)
-            return@flow
-        }
         try {
-            val resp = api.getRates(apiKey = BuildConfig.EXCHANGE_API_KEY)
-            val rates = wantedCodes.mapNotNull { code ->
-                val value = resp.conversion_rates[code] ?: return@mapNotNull null
-                CurrencyRate(
-                    code = code,
-                    name = nameMap[code] ?: code,
-                    flag = flagMap[code] ?: "",
-                    value = Math.round(value * 100.0) / 100.0,
-                    trend = "→  0.0%" // trend requires historical data; placeholder
-                )
+            val resp = api.getRates(apiKey = apiKey)
+            if (resp.result == "success") {
+                val rates = wantedCodes.mapNotNull { code ->
+                    val value = resp.conversion_rates[code] ?: return@mapNotNull null
+                    val rounded = Math.round(value * 100.0) / 100.0
+                    CurrencyRate(
+                        code  = code,
+                        name  = nameMap[code] ?: code,
+                        flag  = flagMap[code] ?: "",
+                        value = rounded,
+                        trend = "→  Live"
+                    )
+                }
+                emit(rates)
+            } else {
+                emit(SampleRates.list)
             }
-            emit(rates)
         } catch (e: Exception) {
+            // Fall back to sample data on any error
             emit(SampleRates.list)
         }
     }
