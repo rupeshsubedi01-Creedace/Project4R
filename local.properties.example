@@ -1,0 +1,16 @@
+# ─────────────────────────────────────────────────────────
+# Project 4R — local.properties template
+# Copy this file → local.properties  (it is git-ignored)
+# ─────────────────────────────────────────────────────────
+
+# Android SDK path (update to your machine's path)
+sdk.dir=/Users/YourName/Library/Android/sdk
+
+# Amadeus Flight API — free tier
+# Get your key at: https://developers.amadeus.com
+AMADEUS_CLIENT_ID=your_amadeus_client_id_here
+AMADEUS_CLIENT_SECRET=your_amadeus_client_secret_here
+
+# ExchangeRate-API — free tier (1,500 req/month, no credit card)
+# Get your key at: https://exchangerate-api.com
+EXCHANGE_API_KEY=your_exchange_rate_api_key_here

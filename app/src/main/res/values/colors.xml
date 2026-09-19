@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 4R White & Green design system -->
+    <color name="green_400">#4ADE80</color>
+    <color name="green_500">#22C55E</color>
+    <color name="green_600">#16A34A</color>
+    <color name="green_700">#15803D</color>
+    <color name="green_bg">#F0FDF4</color>
+    <color name="green_card">#DCFCE7</color>
+    <color name="dark_green">#052E16</color>
+    <color name="white">#FFFFFF</color>
+    <color name="grey_text">#6B7280</color>
+    <color name="red_alert">#EF4444</color>
+</resources>
