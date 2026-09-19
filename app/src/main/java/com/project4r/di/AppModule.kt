@@ -1,7 +1,7 @@
 package com.project4r.di
 
-import com.project4r.data.api.AmadeusApi
 import com.project4r.data.api.CurrencyApi
+import com.project4r.data.api.SerpApi
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -26,16 +26,23 @@ object AppModule {
             })
             .build()
 
+    // SerpAPI — Google Flights
     @Provides
     @Singleton
-    @Named("amadeus")
-    fun provideAmadeusRetrofit(client: OkHttpClient): Retrofit =
+    @Named("serp")
+    fun provideSerpRetrofit(client: OkHttpClient): Retrofit =
         Retrofit.Builder()
-            .baseUrl("https://test.api.amadeus.com/")
+            .baseUrl("https://serpapi.com/")
             .client(client)
             .addConverterFactory(GsonConverterFactory.create())
             .build()
 
+    @Provides
+    @Singleton
+    fun provideSerpApi(@Named("serp") retrofit: Retrofit): SerpApi =
+        retrofit.create(SerpApi::class.java)
+
+    // ExchangeRate-API — Currency
     @Provides
     @Singleton
     @Named("currency")
@@ -45,11 +52,6 @@ object AppModule {
             .client(client)
             .addConverterFactory(GsonConverterFactory.create())
             .build()
-
-    @Provides
-    @Singleton
-    fun provideAmadeusApi(@Named("amadeus") retrofit: Retrofit): AmadeusApi =
-        retrofit.create(AmadeusApi::class.java)
 
     @Provides
     @Singleton
