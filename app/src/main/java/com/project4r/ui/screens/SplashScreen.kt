@@ -87,7 +87,6 @@ fun SplashScreen(onFinished: () -> Unit) {
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(0.dp)
         ) {
-
             // Logo orb
             Box(
                 modifier = Modifier
@@ -186,28 +185,22 @@ fun SplashScreen(onFinished: () -> Unit) {
                 modifier = Modifier
                     .clip(RoundedCornerShape(16.dp))
                     .background(Color.White.copy(alpha = 0.12f))
-                    .padding(horizontal = 20.dp, vertical = 12.dp),
+                    .padding(horizontal = 24.dp, vertical = 14.dp),
                 contentAlignment = Alignment.Center
             ) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Text(
                         "Created by",
-                        fontSize  = 10.sp,
-                        color     = Color.White.copy(alpha = 0.55f),
+                        fontSize   = 10.sp,
+                        color      = Color.White.copy(alpha = 0.55f),
                         fontWeight = FontWeight.Normal
                     )
-                    Spacer(Modifier.height(2.dp))
+                    Spacer(Modifier.height(3.dp))
                     Text(
                         "Rupesh Subedi",
-                        fontSize   = 17.sp,
+                        fontSize   = 18.sp,
                         fontWeight = FontWeight.ExtraBold,
                         color      = Color.White
-                    )
-                    Spacer(Modifier.height(2.dp))
-                    Text(
-                        "Dubai, UAE  \u00b7  2026",
-                        fontSize  = 11.sp,
-                        color     = Color.White.copy(alpha = 0.55f)
                     )
                 }
             }
