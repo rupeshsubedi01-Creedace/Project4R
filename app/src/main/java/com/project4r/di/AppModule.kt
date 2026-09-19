@@ -1,10 +1,13 @@
 package com.project4r.di
 
+import android.content.Context
+import com.project4r.data.UserPreferences
 import com.project4r.data.api.CurrencyApi
 import com.project4r.data.api.VercelFlightApi
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
+import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
@@ -17,23 +20,20 @@ import javax.inject.Singleton
 @InstallIn(SingletonComponent::class)
 object AppModule {
 
-    // ❗ Replace this with your Vercel URL after deploying
-    // Example: "https://project4r-api.vercel.app/"
     private const val VERCEL_BASE_URL = "https://project4r-api.vercel.app/"
 
-    @Provides
-    @Singleton
+    @Provides @Singleton
+    fun provideUserPreferences(@ApplicationContext context: Context): UserPreferences =
+        UserPreferences(context)
+
+    @Provides @Singleton
     fun provideOkHttpClient(): OkHttpClient =
         OkHttpClient.Builder()
             .addInterceptor(HttpLoggingInterceptor().apply {
                 level = HttpLoggingInterceptor.Level.BODY
-            })
-            .build()
+            }).build()
 
-    // Vercel backend — Google Flights proxy
-    @Provides
-    @Singleton
-    @Named("vercel")
+    @Provides @Singleton @Named("vercel")
     fun provideVercelRetrofit(client: OkHttpClient): Retrofit =
         Retrofit.Builder()
             .baseUrl(VERCEL_BASE_URL)
@@ -41,15 +41,11 @@ object AppModule {
             .addConverterFactory(GsonConverterFactory.create())
             .build()
 
-    @Provides
-    @Singleton
+    @Provides @Singleton
     fun provideVercelFlightApi(@Named("vercel") retrofit: Retrofit): VercelFlightApi =
         retrofit.create(VercelFlightApi::class.java)
 
-    // ExchangeRate-API — Currency
-    @Provides
-    @Singleton
-    @Named("currency")
+    @Provides @Singleton @Named("currency")
     fun provideCurrencyRetrofit(client: OkHttpClient): Retrofit =
         Retrofit.Builder()
             .baseUrl("https://v6.exchangerate-api.com/v6/")
@@ -57,8 +53,7 @@ object AppModule {
             .addConverterFactory(GsonConverterFactory.create())
             .build()
 
-    @Provides
-    @Singleton
+    @Provides @Singleton
     fun provideCurrencyApi(@Named("currency") retrofit: Retrofit): CurrencyApi =
         retrofit.create(CurrencyApi::class.java)
 }
