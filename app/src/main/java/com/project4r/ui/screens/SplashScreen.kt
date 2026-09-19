@@ -24,33 +24,29 @@ import kotlinx.coroutines.delay
 @Composable
 fun SplashScreen(onFinished: () -> Unit) {
 
-    // Animation states
-    var logoVisible  by remember { mutableStateOf(false) }
-    var textVisible  by remember { mutableStateOf(false) }
-    var tagVisible   by remember { mutableStateOf(false) }
-    var dotsVisible  by remember { mutableStateOf(false) }
+    var logoVisible by remember { mutableStateOf(false) }
+    var textVisible by remember { mutableStateOf(false) }
+    var tagVisible  by remember { mutableStateOf(false) }
+    var dotsVisible by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
         delay(200);  logoVisible = true
         delay(400);  textVisible = true
         delay(300);  tagVisible  = true
         delay(400);  dotsVisible = true
-        delay(1200); onFinished()
+        delay(1400); onFinished()
     }
 
-    // Logo scale animation
     val logoScale by animateFloatAsState(
-        targetValue = if (logoVisible) 1f else 0.3f,
+        targetValue   = if (logoVisible) 1f else 0.3f,
         animationSpec = spring(
             dampingRatio = Spring.DampingRatioMediumBouncy,
             stiffness    = Spring.StiffnessMedium
-        ),
-        label = "logoScale"
+        ), label = "logoScale"
     )
     val logoAlpha by animateFloatAsState(
-        targetValue  = if (logoVisible) 1f else 0f,
-        animationSpec = tween(400),
-        label = "logoAlpha"
+        targetValue   = if (logoVisible) 1f else 0f,
+        animationSpec = tween(400), label = "logoAlpha"
     )
 
     Box(
@@ -59,16 +55,16 @@ fun SplashScreen(onFinished: () -> Unit) {
             .background(
                 Brush.verticalGradient(
                     colors = listOf(
-                        Color(0xFF052E16), // dark green top
-                        Color(0xFF14532D), // mid
-                        Color(0xFF16A34A)  // bright green bottom
+                        Color(0xFF052E16),
+                        Color(0xFF14532D),
+                        Color(0xFF16A34A)
                     )
                 )
             ),
         contentAlignment = Alignment.Center
     ) {
 
-        // Decorative background circles
+        // Decorative circles
         Box(
             modifier = Modifier
                 .size(320.dp)
@@ -114,7 +110,7 @@ fun SplashScreen(onFinished: () -> Unit) {
 
             Spacer(Modifier.height(28.dp))
 
-            // App name
+            // App name + pills
             AnimatedVisibility(
                 visible = textVisible,
                 enter   = fadeIn(tween(500)) + slideInVertically(
@@ -125,16 +121,13 @@ fun SplashScreen(onFinished: () -> Unit) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Text(
                         "Project 4R",
-                        fontSize     = 38.sp,
-                        fontWeight   = FontWeight.ExtraBold,
-                        color        = Color.White,
+                        fontSize      = 38.sp,
+                        fontWeight    = FontWeight.ExtraBold,
+                        color         = Color.White,
                         letterSpacing = 1.sp
                     )
-                    Spacer(Modifier.height(6.dp))
-                    // 4 module pills
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(6.dp)
-                    ) {
+                    Spacer(Modifier.height(8.dp))
+                    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                         listOf("Route", "Remind", "Review", "Reset").forEach { label ->
                             Box(
                                 modifier = Modifier
@@ -154,7 +147,7 @@ fun SplashScreen(onFinished: () -> Unit) {
                 }
             }
 
-            Spacer(Modifier.height(16.dp))
+            Spacer(Modifier.height(14.dp))
 
             // Tagline
             AnimatedVisibility(
@@ -170,7 +163,7 @@ fun SplashScreen(onFinished: () -> Unit) {
                 )
             }
 
-            Spacer(Modifier.height(60.dp))
+            Spacer(Modifier.height(50.dp))
 
             // Loading dots
             AnimatedVisibility(
@@ -181,18 +174,43 @@ fun SplashScreen(onFinished: () -> Unit) {
             }
         }
 
-        // Bottom credit
+        // Bottom — creator card
         AnimatedVisibility(
-            visible      = tagVisible,
-            enter        = fadeIn(tween(800)),
-            modifier     = Modifier.align(Alignment.BottomCenter)
+            visible  = tagVisible,
+            enter    = fadeIn(tween(800)),
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .padding(bottom = 40.dp)
         ) {
-            Text(
-                "by Rupesh Subedi  \u00b7  Dubai 2026",
-                fontSize  = 11.sp,
-                color     = Color.White.copy(alpha = 0.4f),
-                modifier  = Modifier.padding(bottom = 32.dp)
-            )
+            Box(
+                modifier = Modifier
+                    .clip(RoundedCornerShape(16.dp))
+                    .background(Color.White.copy(alpha = 0.12f))
+                    .padding(horizontal = 20.dp, vertical = 12.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text(
+                        "Created by",
+                        fontSize  = 10.sp,
+                        color     = Color.White.copy(alpha = 0.55f),
+                        fontWeight = FontWeight.Normal
+                    )
+                    Spacer(Modifier.height(2.dp))
+                    Text(
+                        "Rupesh Subedi",
+                        fontSize   = 17.sp,
+                        fontWeight = FontWeight.ExtraBold,
+                        color      = Color.White
+                    )
+                    Spacer(Modifier.height(2.dp))
+                    Text(
+                        "Dubai, UAE  \u00b7  2026",
+                        fontSize  = 11.sp,
+                        color     = Color.White.copy(alpha = 0.55f)
+                    )
+                }
+            }
         }
     }
 }
@@ -200,15 +218,14 @@ fun SplashScreen(onFinished: () -> Unit) {
 @Composable
 fun LoadingDots() {
     val infiniteTransition = rememberInfiniteTransition(label = "dots")
-
     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         (0..2).forEach { i ->
             val alpha by infiniteTransition.animateFloat(
-                initialValue = 0.3f,
-                targetValue  = 1f,
+                initialValue  = 0.3f,
+                targetValue   = 1f,
                 animationSpec = infiniteRepeatable(
-                    animation  = tween(500, easing = LinearEasing),
-                    repeatMode = RepeatMode.Reverse,
+                    animation          = tween(500, easing = LinearEasing),
+                    repeatMode         = RepeatMode.Reverse,
                     initialStartOffset = StartOffset(i * 160)
                 ),
                 label = "dot$i"
