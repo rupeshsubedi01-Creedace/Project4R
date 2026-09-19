@@ -1,0 +1,12 @@
+{
+  "name": "project4r-api",
+  "version": "1.0.0",
+  "description": "Project 4R — Free Vercel backend for Google Flights via SerpAPI",
+  "main": "index.js",
+  "scripts": {
+    "dev": "vercel dev"
+  },
+  "dependencies": {
+    "node-fetch": "^3.3.2"
+  }
+}

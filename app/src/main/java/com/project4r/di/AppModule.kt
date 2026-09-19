@@ -1,7 +1,7 @@
 package com.project4r.di
 
 import com.project4r.data.api.CurrencyApi
-import com.project4r.data.api.SerpApi
+import com.project4r.data.api.VercelFlightApi
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -17,6 +17,10 @@ import javax.inject.Singleton
 @InstallIn(SingletonComponent::class)
 object AppModule {
 
+    // ❗ Replace this with your Vercel URL after deploying
+    // Example: "https://project4r-api.vercel.app/"
+    private const val VERCEL_BASE_URL = "https://project4r-api.vercel.app/"
+
     @Provides
     @Singleton
     fun provideOkHttpClient(): OkHttpClient =
@@ -26,21 +30,21 @@ object AppModule {
             })
             .build()
 
-    // SerpAPI — Google Flights
+    // Vercel backend — Google Flights proxy
     @Provides
     @Singleton
-    @Named("serp")
-    fun provideSerpRetrofit(client: OkHttpClient): Retrofit =
+    @Named("vercel")
+    fun provideVercelRetrofit(client: OkHttpClient): Retrofit =
         Retrofit.Builder()
-            .baseUrl("https://serpapi.com/")
+            .baseUrl(VERCEL_BASE_URL)
             .client(client)
             .addConverterFactory(GsonConverterFactory.create())
             .build()
 
     @Provides
     @Singleton
-    fun provideSerpApi(@Named("serp") retrofit: Retrofit): SerpApi =
-        retrofit.create(SerpApi::class.java)
+    fun provideVercelFlightApi(@Named("vercel") retrofit: Retrofit): VercelFlightApi =
+        retrofit.create(VercelFlightApi::class.java)
 
     // ExchangeRate-API — Currency
     @Provides
