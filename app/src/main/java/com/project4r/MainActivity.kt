@@ -9,8 +9,9 @@ import androidx.compose.material3.Surface
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.navigation.compose.rememberNavController
-import com.project4r.ui.theme.Project4RTheme
 import com.project4r.ui.navigation.AppNavGraph
+import com.project4r.ui.screens.SplashScreen
+import com.project4r.ui.theme.Project4RTheme
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
@@ -23,8 +24,14 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    val navController = rememberNavController()
-                    AppNavGraph(navController = navController)
+                    var showSplash by remember { mutableStateOf(true) }
+
+                    if (showSplash) {
+                        SplashScreen(onFinished = { showSplash = false })
+                    } else {
+                        val navController = rememberNavController()
+                        AppNavGraph(navController = navController)
+                    }
                 }
             }
         }
