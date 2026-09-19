@@ -22,20 +22,22 @@ jobs:
         with:
           java-version: '17'
           distribution: 'temurin'
-          cache: gradle
+
+      - name: 📥 Download Gradle 8.4
+        run: |
+          wget -q https://services.gradle.org/distributions/gradle-8.4-bin.zip -O gradle.zip
+          unzip -q gradle.zip -d $HOME
+          echo "$HOME/gradle-8.4/bin" >> $GITHUB_PATH
 
       - name: 📝 Create local.properties
         run: |
           echo "sdk.dir=$ANDROID_SDK_ROOT" >> local.properties
-          echo "AMADEUS_CLIENT_ID=${{ secrets.AMADEUS_CLIENT_ID }}" >> local.properties
-          echo "AMADEUS_CLIENT_SECRET=${{ secrets.AMADEUS_CLIENT_SECRET }}" >> local.properties
+          echo "AMADEUS_CLIENT_ID=" >> local.properties
+          echo "AMADEUS_CLIENT_SECRET=" >> local.properties
           echo "EXCHANGE_API_KEY=${{ secrets.EXCHANGE_API_KEY }}" >> local.properties
 
-      - name: 🔑 Grant execute permission to gradlew
-        run: chmod +x gradlew
-
       - name: 🔨 Build Debug APK
-        run: ./gradlew assembleDebug --no-daemon --stacktrace
+        run: gradle assembleDebug --no-daemon --stacktrace
 
       - name: 📦 Upload APK artifact
         uses: actions/upload-artifact@v4
