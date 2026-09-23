@@ -38,6 +38,9 @@ Users speak or type naturally — no forms:
 - **Holidays:** [caldays.com](https://caldays.com/api) public holidays — live Nepal holidays on Remind (keyless, CC BY 4.0)
 - **Weather:** [Open-Meteo](https://open-meteo.com) — live destination weather on Route (keyless)
 - **No API keys in the app** — see `local.properties.example`
+- **No mock data** — flights, rates, holidays, weather and price history are live-only;
+  empty states are shown honestly when a source is unreachable
+- **One-way only** — the feed lists one-way fares exclusively
 - **Calendar:** Gregorian + Bikram Sambat dual-engine
 - **Timezone:** Asia/Dubai (GST UTC+4) ↔ Asia/Kathmandu (NPT UTC+5:45)
 - **Storage:** Room DB (offline cache) + Firebase Firestore

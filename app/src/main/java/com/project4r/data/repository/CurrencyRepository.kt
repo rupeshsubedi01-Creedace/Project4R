@@ -2,7 +2,6 @@ package com.project4r.data.repository
 
 import com.project4r.data.api.CurrencyApi
 import com.project4r.data.model.CurrencyRate
-import com.project4r.data.model.SampleRates
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import javax.inject.Inject
@@ -42,11 +41,11 @@ class CurrencyRepository @Inject constructor(
                 }
                 emit(list)
             } else {
-                emit(SampleRates.list)
+                // Real data only — no mock rates
+                emit(emptyList())
             }
         } catch (e: Exception) {
-            // Fall back to sample data on any error
-            emit(SampleRates.list)
+            emit(emptyList())
         }
     }
 }

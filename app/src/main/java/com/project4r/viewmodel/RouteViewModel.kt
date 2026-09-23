@@ -2,7 +2,10 @@ package com.project4r.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.google.gson.Gson
+import com.project4r.data.UserPreferences
 import com.project4r.data.model.FlightOffer
+import com.project4r.data.model.PricePoint
 import com.project4r.data.repository.FlightRepository
 import com.project4r.data.repository.WeatherRepository
 import com.project4r.nlp.NLPParser
@@ -14,7 +17,8 @@ import javax.inject.Inject
 @HiltViewModel
 class RouteViewModel @Inject constructor(
     private val repository: FlightRepository,
-    private val weatherRepository: WeatherRepository
+    private val weatherRepository: WeatherRepository,
+    private val prefs: UserPreferences
 ) : ViewModel() {
 
     private val _nlpQuery = MutableStateFlow("")
@@ -55,8 +59,30 @@ class RouteViewModel @Inject constructor(
                 .collect { results ->
                     _flights.value = results
                     _isLoading.value = false
+                    persistPricePoint(results)
                 }
         }
+    }
+
+    /** Remember the cheapest live fare seen — feeds the Review screen. */
+    private fun persistPricePoint(results: List<FlightOffer>) {
+        if (results.isEmpty()) return
+        val first = results.first()
+        val best  = results.minBy { it.priceAed }
+        try {
+            val gson = Gson()
+            val list = gson.fromJson(prefs.priceHistoryJson, Array<PricePoint>::class.java)
+                ?.toMutableList() ?: mutableListOf()
+            list.add(
+                PricePoint(
+                    route    = "${first.origin} \u2192 ${first.destination}",
+                    date     = first.date,
+                    minPrice = best.priceAed,
+                    airline  = best.airlineName
+                )
+            )
+            prefs.priceHistoryJson = gson.toJson(list.takeLast(90))
+        } catch (_: Exception) { /* history is best-effort */ }
     }
 
     private fun loadWeather(iata: String) {

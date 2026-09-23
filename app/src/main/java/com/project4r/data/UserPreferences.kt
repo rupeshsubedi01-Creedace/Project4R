@@ -45,6 +45,11 @@ class UserPreferences @Inject constructor(
         set(value) = prefs.edit().putString("home_flag", value).apply()
 
     var homeAirportCode: String
-        get()      = prefs.getString("home_airport", "KTM") ?: "KTM"
+        get() = prefs.getString("home_airport", "KTM") ?: "KTM"
         set(value) = prefs.edit().putString("home_airport", value).apply()
+
+    // JSON array of PricePoint — real observed fares from Route searches
+    var priceHistoryJson: String
+        get() = prefs.getString("price_history", "[]") ?: "[]"
+        set(value) = prefs.edit().putString("price_history", value).apply()
 }

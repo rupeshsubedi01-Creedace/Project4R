@@ -108,6 +108,24 @@ fun CurrencyScreen(viewModel: CurrencyViewModel = hiltViewModel()) {
             }
         }
 
+        if (!isLoading && rates.isEmpty()) {
+            item {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(16.dp))
+                        .background(Color.White)
+                        .padding(16.dp)
+                ) {
+                    Text(
+                        "Live rates are unavailable right now — check your connection and pull to refresh. No estimated rates are shown.",
+                        fontSize = 12.sp,
+                        color = Color(0xFF6B7280)
+                    )
+                }
+            }
+        }
+
         items(rates) { rate ->
             val isNPR = rate.code == "NPR"
             val cardShape = RoundedCornerShape(16.dp)

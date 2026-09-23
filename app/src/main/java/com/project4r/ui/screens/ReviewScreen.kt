@@ -3,128 +3,153 @@ package com.project4r.ui.screens
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-
-data class HistoryItem(val route: String, val airline: String, val date: String, val price: String)
-
-val sampleHistory = listOf(
-    HistoryItem("DXB \u2192 KTM", "IndiGo", "19 Sep", "AED 590"),
-    HistoryItem("DXB \u2192 BOM", "Air Arabia", "12 Sep", "AED 340"),
-    HistoryItem("DXB \u2192 LHR", "Emirates", "5 Sep", "AED 2,100"),
-)
+import androidx.hilt.navigation.compose.hiltViewModel
+import com.project4r.viewmodel.ReviewViewModel
 
 @Composable
-fun ReviewScreen() {
+fun ReviewScreen(viewModel: ReviewViewModel = hiltViewModel()) {
+    val points by viewModel.points.collectAsState()
+
+    val cheapest = points.minByOrNull { it.minPrice }
+    val average  = if (points.isEmpty()) 0 else points.sumOf { it.minPrice } / points.size
+    val last     = points.lastOrNull()
+    val belowAvg = last != null && average > 0 && last.minPrice <= average
+
     LazyColumn(
         modifier = Modifier.fillMaxSize().padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        // Trend card
         item {
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                elevation = CardDefaults.cardElevation(2.dp)
-            ) {
-                Column(Modifier.padding(16.dp)) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Text("DXB \u2192 KTM Trend", fontWeight = FontWeight.ExtraBold, fontSize = 14.sp)
-                        Text("\u2193 Falling", color = MaterialTheme.colorScheme.primary,
-                            fontSize = 11.sp, fontWeight = FontWeight.Bold)
-                    }
-                    Text("Price (AED) \u00b7 Last 6 months",
-                        fontSize = 11.sp, color = MaterialTheme.colorScheme.outline)
-                    Spacer(Modifier.height(14.dp))
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Text("\uD83D\uDCCA Review", fontWeight = FontWeight.ExtraBold, fontSize = 24.sp,
+                    color = Color(0xFF111827))
+                Text("Your real searched fares — nothing estimated",
+                    fontSize = 13.sp, color = Color(0xFF6B7280))
+            }
+        }
 
-                    // Simple bar chart
-                    val bars = listOf(
-                        Pair("Apr", 0.75f), Pair("May", 0.68f),
-                        Pair("Jun", 0.85f), Pair("Jul", 0.62f),
-                        Pair("Aug", 0.55f), Pair("Sep", 0.43f)
+        if (points.isEmpty()) {
+            item {
+                Card(modifier = Modifier.fillMaxWidth()) {
+                    Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                        Text("No price history yet",
+                            fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                        Text("Search a route on the Route tab. Every live search saves its cheapest fare here, so your trend chart is built from your own searches — never from mock data.",
+                            fontSize = 12.sp, color = Color(0xFF6B7280))
+                    }
+                }
+            }
+        } else {
+            // Stats row — all computed from real observations
+            item {
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    StatCard("Cheapest seen", "AED ${cheapest?.minPrice}", "\u2708\uFE0F ${cheapest?.airline ?: ""}")
+                    StatCard("Average", "AED $average", "${points.size} searches")
+                    StatCard(
+                        "Latest",
+                        "AED ${last?.minPrice}",
+                        if (belowAvg) "\u25bc below avg" else "\u25b2 above avg"
                     )
-                    Row(
-                        modifier = Modifier.fillMaxWidth().height(60.dp),
-                        verticalAlignment = Alignment.Bottom,
-                        horizontalArrangement = Arrangement.spacedBy(6.dp)
-                    ) {
-                        bars.forEachIndexed { i, (month, fraction) ->
-                            Column(
-                                modifier = Modifier.weight(1f),
-                                horizontalAlignment = Alignment.CenterHorizontally
-                            ) {
-                                Box(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .fillMaxHeight(fraction)
-                                        .background(
-                                            color = if (i == bars.lastIndex)
-                                                MaterialTheme.colorScheme.primary
-                                            else MaterialTheme.colorScheme.primaryContainer,
-                                            shape = MaterialTheme.shapes.extraSmall
-                                        )
-                                )
-                                Text(month, fontSize = 9.sp,
-                                    color = MaterialTheme.colorScheme.outline)
+                }
+            }
+
+            // Real trend chart from the last 12 observed points
+            item {
+                Card(modifier = Modifier.fillMaxWidth()) {
+                    Column(Modifier.padding(16.dp)) {
+                        Row(modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween) {
+                            Text("Your fare trend", fontWeight = FontWeight.ExtraBold, fontSize = 14.sp)
+                            Text(if (belowAvg) "\u25bc Good time to book"
+                                 else "\u25b2 Above your average",
+                                color = MaterialTheme.colorScheme.primary,
+                                fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                        }
+                        Spacer(Modifier.height(14.dp))
+                        val shown = points.takeLast(12)
+                        val maxP  = (shown.maxOf { it.minPrice }).coerceAtLeast(1)
+                        Row(
+                            modifier = Modifier.fillMaxWidth().height(70.dp),
+                            verticalAlignment = Alignment.Bottom,
+                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            shown.forEach { p ->
+                                val fraction = (p.minPrice.toFloat() / maxP).coerceIn(0.15f, 1f)
+                                Column(
+                                    modifier = Modifier.weight(1f).fillMaxHeight(),
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    verticalArrangement = Arrangement.Bottom
+                                ) {
+                                    Box(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .fillMaxHeight(fraction)
+                                            .background(
+                                                color = if (p == shown.last())
+                                                    MaterialTheme.colorScheme.primary
+                                                else MaterialTheme.colorScheme.primaryContainer,
+                                                shape = RoundedCornerShape(3.dp)
+                                            )
+                                    )
+                                }
                             }
                         }
-                    }
-                    Spacer(Modifier.height(6.dp))
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Text("\uD83D\uDCA1 Book 3 weeks early for best price",
-                            fontSize = 11.sp, color = MaterialTheme.colorScheme.primary,
-                            fontWeight = FontWeight.SemiBold)
-                        Text("AED 590", fontWeight = FontWeight.ExtraBold, fontSize = 12.sp,
-                            color = MaterialTheme.colorScheme.primary)
+                        Spacer(Modifier.height(6.dp))
+                        Text("Cheapest live fare per search (AED)",
+                            fontSize = 10.sp, color = Color(0xFF9CA3AF))
                     }
                 }
             }
-        }
 
-        // History header
-        item {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Text("Search History", fontWeight = FontWeight.ExtraBold, fontSize = 14.sp)
-                Text("All \u2192", fontSize = 11.sp, color = MaterialTheme.colorScheme.primary,
-                    fontWeight = FontWeight.Bold)
-            }
-        }
-
-        // History rows
-        sampleHistory.forEach { item ->
+            // Real history rows
             item {
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    elevation = CardDefaults.cardElevation(1.dp)
-                ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth().padding(14.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Column {
-                            Text(item.route, fontWeight = FontWeight.Bold, fontSize = 13.sp)
-                            Text("${item.date} \u00b7 ${item.airline}",
-                                fontSize = 11.sp, color = MaterialTheme.colorScheme.outline)
+                Text("Search history", fontWeight = FontWeight.ExtraBold, fontSize = 14.sp)
+            }
+            points.asReversed().take(20).forEach { p ->
+                item {
+                    Card(modifier = Modifier.fillMaxWidth(),
+                        elevation = CardDefaults.cardElevation(1.dp)) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth().padding(14.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column {
+                                Text(p.route, fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                                Text("${p.date} \u00b7 ${p.airline}",
+                                    fontSize = 11.sp, color = Color(0xFF9CA3AF))
+                            }
+                            Text("AED ${p.minPrice}", fontWeight = FontWeight.ExtraBold,
+                                fontSize = 15.sp, color = MaterialTheme.colorScheme.primary)
                         }
-                        Text(item.price, fontWeight = FontWeight.ExtraBold, fontSize = 15.sp,
-                            color = MaterialTheme.colorScheme.primary)
                     }
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun RowScope.StatCard(title: String, value: String, sub: String) {
+    Card(
+        modifier = Modifier.weight(1f),
+        elevation = CardDefaults.cardElevation(1.dp)
+    ) {
+        Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            Text(title, fontSize = 10.sp, color = Color(0xFF9CA3AF), fontWeight = FontWeight.SemiBold)
+            Text(value, fontWeight = FontWeight.ExtraBold, fontSize = 16.sp,
+                color = MaterialTheme.colorScheme.primary)
+            Text(sub, fontSize = 9.sp, color = Color(0xFF9CA3AF))
         }
     }
 }

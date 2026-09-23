@@ -87,7 +87,7 @@ fun RouteScreen(viewModel: RouteViewModel = hiltViewModel()) {
                         .padding(horizontal = 12.dp, vertical = 5.dp)
                 ) {
                     Text(
-                        "DXB → KTM · Live",
+                        "One way · Live",
                         color = Green600,
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Bold
@@ -104,6 +104,33 @@ fun RouteScreen(viewModel: RouteViewModel = hiltViewModel()) {
                         color = Green600,
                         modifier = Modifier.padding(24.dp)
                     )
+                }
+            }
+        }
+
+        // Honest empty state — no fake flights ever shown
+        if (!isLoading && flights.isEmpty()) {
+            item {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(16.dp))
+                        .background(Color.White)
+                        .padding(20.dp)
+                ) {
+                    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                        Text(
+                            "No live one-way flights found",
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 14.sp,
+                            color = Color(0xFF111827)
+                        )
+                        Text(
+                            "Pull to refresh to retry the live search. We never show estimated or mock fares.",
+                            fontSize = 12.sp,
+                            color = Color(0xFF6B7280)
+                        )
+                    }
                 }
             }
         }
