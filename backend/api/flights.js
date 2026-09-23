@@ -93,6 +93,18 @@ export default async function handler(req, res) {
       };
     }).sort((a, b) => a.priceAed - b.priceAed);
 
+    // Keep the feed diverse: max 2 cards per airline (stops IndiGo/AirIndia spam)
+    const perAirline = {};
+    flights = flights.filter(f => {
+      perAirline[f.airlineName] = (perAirline[f.airlineName] || 0) + 1;
+      return perAirline[f.airlineName] <= 2;
+    });
+
+    // Always represent Nepali national carriers for KTM routes
+    const nepali = nepaliCarriers(origin, destination, date, nprRate)
+      .filter(nc => !flights.some(f => f.airlineName === nc.airlineName));
+    flights = flights.concat(nepali).sort((a, b) => a.priceAed - b.priceAed);
+
     return res.status(200).json({
       origin,
       destination,

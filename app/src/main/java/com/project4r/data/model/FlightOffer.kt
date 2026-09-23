@@ -74,6 +74,24 @@ object SmartFlightEngine {
             departureTime = "23:55 GST", arrivalTimeNPT = "09:30+1 NPT",
             arrivalBS = "4 Asoj 2083", seatsLeft = 2,
             lastUpdated = "Today 09:00 GST"
+        ),
+        FlightOffer(
+            id = "6", airlineName = "Himalaya Airlines", airlineCode = "H9",
+            priceAed = 605, priceNpr = 25218,
+            duration = "6h 50m", stops = "1 stop · DOH",
+            bookingLinks = listOf("HimalayaAirlines.com", "Wego"),
+            departureTime = "11:20 GST", arrivalTimeNPT = "19:10 NPT",
+            arrivalBS = "3 Asoj 2083", seatsLeft = 9,
+            lastUpdated = "Today 09:00 GST"
+        ),
+        FlightOffer(
+            id = "7", airlineName = "Nepal Airlines", airlineCode = "RA",
+            priceAed = 640, priceNpr = 26679,
+            duration = "7h 05m", stops = "1 stop · DOH",
+            bookingLinks = listOf("NepalAirlines.com", "Wego"),
+            departureTime = "09:40 GST", arrivalTimeNPT = "17:45 NPT",
+            arrivalBS = "3 Asoj 2083", seatsLeft = 6,
+            lastUpdated = "Today 09:00 GST"
         )
     )
 
