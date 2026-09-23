@@ -1,7 +1,10 @@
 package com.project4r.ui.components
 
+import android.content.Intent
+import android.net.Uri
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
@@ -11,11 +14,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.project4r.data.model.FlightOffer
 import com.project4r.ui.theme.*
+import com.project4r.util.BookingLinks
 
 @Composable
 fun FlightCard(flight: FlightOffer) {
@@ -129,11 +134,24 @@ fun FlightCard(flight: FlightOffer) {
                     color = Color(0xFF9CA3AF),
                     fontWeight = FontWeight.SemiBold
                 )
+                val context = LocalContext.current
                 flight.bookingLinks.forEach { link ->
                     Box(
                         modifier = Modifier
                             .clip(RoundedCornerShape(8.dp))
                             .background(GreenCard)
+                            .clickable {
+                                // Tap a chip -> opens the real booking site
+                                // for this route and date in the browser.
+                                val url = BookingLinks.urlFor(
+                                    link, flight.origin, flight.destination, flight.date
+                                )
+                                try {
+                                    context.startActivity(
+                                        Intent(Intent.ACTION_VIEW, Uri.parse(url))
+                                    )
+                                } catch (_: Exception) { /* no browser */ }
+                            }
                             .padding(horizontal = 10.dp, vertical = 4.dp)
                     ) {
                         Text(

@@ -29,7 +29,8 @@ class FlightRepository @Inject constructor(
             )
 
             if (resp.flights.isEmpty()) {
-                emit(SmartFlightEngine.getFlights(origin, destination))
+                emit(SmartFlightEngine.getFlights(origin, destination)
+                    .map { it.copy(origin = origin, destination = destination, date = date) })
                 return@flow
             }
 
@@ -46,7 +47,10 @@ class FlightRepository @Inject constructor(
                     isBestDeal    = f.isBestDeal,
                     departureTime = formatTime(f.departure.time) + " GST",
                     arrivalTimeNPT = formatTime(f.arrival.time) + " NPT",
-                    lastUpdated   = f.source
+                    lastUpdated   = f.source,
+                    origin        = resp.origin,
+                    destination   = resp.destination,
+                    date          = resp.date
                 )
             }
             emit(offers)
@@ -54,7 +58,8 @@ class FlightRepository @Inject constructor(
         } catch (e: Exception) {
             // Vercel not deployed yet — use smart local data
             delay(800)
-            emit(SmartFlightEngine.getFlights(origin, destination))
+            emit(SmartFlightEngine.getFlights(origin, destination)
+                .map { it.copy(origin = origin, destination = destination, date = date) })
         }
     }
 

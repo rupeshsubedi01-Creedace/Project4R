@@ -14,7 +14,10 @@ data class FlightOffer(
     val arrivalTimeNPT: String = "",
     val arrivalBS: String = "",
     val seatsLeft: Int = 0,
-    val lastUpdated: String = ""
+    val lastUpdated: String = "",
+    val origin: String = "DXB",
+    val destination: String = "KTM",
+    val date: String = ""
 )
 
 /**
