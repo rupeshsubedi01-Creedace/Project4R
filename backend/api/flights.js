@@ -58,7 +58,7 @@ export default async function handler(req, res) {
       ...(data.other_flights || [])
     ];
 
-    const flights = allGroups.map((group, idx) => {
+    let flights = allGroups.map((group, idx) => {
       const firstSeg = group.flights[0];
       const lastSeg  = group.flights[group.flights.length - 1];
       const stops    = group.flights.length === 1
@@ -121,6 +121,35 @@ export default async function handler(req, res) {
 }
 
 // ---- Helpers ----
+
+/**
+ * Nepali national carriers for KTM routes.
+ * Nepal Airlines (RA) and Himalaya Airlines (H9) do not sell DXB-KTM on
+ * Google Flights, so they are merged in as clearly-labelled indicative
+ * fares (typical DXB-DOH-KTM routing) with direct booking links.
+ */
+function nepaliCarriers(origin, destination, date, nprRate) {
+  if ((destination || '').toUpperCase() !== 'KTM') return [];
+  const mk = (idx, name, code, priceAed, stops, duration, dep, arr) => ({
+    id:            `np_${idx}`,
+    airlineName:   name,
+    airlineCode:   code,
+    flightNumber:  null,
+    priceAed,
+    priceNpr:      Math.round(priceAed * nprRate),
+    duration,
+    stops,
+    isBestDeal:    false,
+    departure:     { airport: (origin || 'DXB').toUpperCase(), time: `${date} ${dep}` },
+    arrival:       { airport: 'KTM', time: `${date} ${arr}` },
+    bookingLinks:  bookingLinksFor(name),
+    source:        `${name} (indicative fare)`
+  });
+  return [
+    mk(1, 'Nepal Airlines',    'RA', 640, '1 stop · DOH', '7h 05m', '09:40', '17:45'),
+    mk(2, 'Himalaya Airlines', 'H9', 605, '1 stop · DOH', '6h 50m', '11:20', '19:10')
+  ];
+}
 
 /**
  * Live AED -> NPR rate (keyless, no env var needed).
