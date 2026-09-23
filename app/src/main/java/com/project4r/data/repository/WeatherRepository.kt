@@ -22,10 +22,12 @@ class WeatherRepository @Inject constructor(
     )
 
     /** Current weather at destination, or null when unavailable. */
-    suspend fun currentFor(iata: String): OpenMeteoCurrent? = try {
-        val c = coords[iata.uppercase()] ?: return null
-        api.current(c.first, c.second).current
-    } catch (e: Exception) {
-        null
+    suspend fun currentFor(iata: String): OpenMeteoCurrent? {
+        return try {
+            val c = coords[iata.uppercase()] ?: return null
+            api.current(c.first, c.second).current
+        } catch (e: Exception) {
+            null
+        }
     }
 }
