@@ -24,6 +24,9 @@ export default async function handler(req, res) {
 
   const serpKey = process.env.SERPAPI_KEY;
 
+  // Live AED->NPR from the keyless ExchangeRate-API public mirror.
+  const nprRate = await aedToNprRate();
+
   if (!serpKey) {
     return res.status(500).json({
       error: 'SERPAPI_KEY not set in Vercel environment variables'
@@ -65,7 +68,7 @@ export default async function handler(req, res) {
       const hrs  = Math.floor(group.total_duration / 60);
       const mins = group.total_duration % 60;
       const priceAed = group.price;
-      const priceNpr = Math.round(priceAed * 36.52);
+      const priceNpr = Math.round(priceAed * nprRate);
 
       return {
         id:            `flight_${idx}`,
@@ -106,6 +109,24 @@ export default async function handler(req, res) {
 }
 
 // ---- Helpers ----
+
+/**
+ * Live AED -> NPR rate (keyless, no env var needed).
+ * Falls back to a recent snapshot if the rate service is unreachable.
+ */
+async function aedToNprRate() {
+  try {
+    const r = await fetch('https://open.er-api.com/v6/latest/AED');
+    if (r.ok) {
+      const d = await r.json();
+      const npr = d && d.rates && d.rates.NPR;
+      if (typeof npr === 'number' && npr > 1) return npr;
+    }
+  } catch (e) {
+    console.error('NPR rate fetch failed, using fallback:', e);
+  }
+  return 41.68; // Sept-2026 snapshot fallback
+}
 
 function nextFriday() {
   const d = new Date();

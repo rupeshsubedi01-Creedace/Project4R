@@ -5,10 +5,8 @@ import retrofit2.http.Query
 
 /**
  * Project 4R Vercel backend API.
- * Base URL is your Vercel deployment URL, e.g.:
- *   https://project4r-api.vercel.app/
- *
- * After deploying, update BASE_URL in AppModule.kt.
+ * Live deployment: https://project4-r.vercel.app/  (see VERCEL_BASE_URL in AppModule.kt)
+ * Note: the old project4r-api.vercel.app deployment no longer exists.
  */
 
 data class VercelFlightResponse(

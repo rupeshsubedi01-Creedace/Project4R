@@ -1,16 +1,11 @@
-# ─────────────────────────────────────────────────────────
-# Project 4R — local.properties template
-# Copy this file → local.properties  (it is git-ignored)
-# ─────────────────────────────────────────────────────────
-
-# Android SDK path (update to your machine's path)
-sdk.dir=/Users/YourName/Library/Android/sdk
-
-# Amadeus Flight API — free tier
-# Get your key at: https://developers.amadeus.com
-AMADEUS_CLIENT_ID=your_amadeus_client_id_here
-AMADEUS_CLIENT_SECRET=your_amadeus_client_secret_here
-
-# ExchangeRate-API — free tier (1,500 req/month, no credit card)
-# Get your key at: https://exchangerate-api.com
-EXCHANGE_API_KEY=your_exchange_rate_api_key_here
+# Project 4R — local.properties example
+#
+# Since v1.1 this project needs NO API keys.
+# All live data comes from keyless public APIs:
+#   - Flights   : your Vercel backend (SerpAPI key lives in Vercel env, not here)
+#   - Currency  : https://open.er-api.com        (keyless)
+#   - Holidays  : https://caldays.com            (keyless, CC BY 4.0)
+#   - Weather   : https://api.open-meteo.com     (keyless)
+#
+# Android Studio will create local.properties with just sdk.dir:
+sdk.dir=/path/to/your/Android/Sdk

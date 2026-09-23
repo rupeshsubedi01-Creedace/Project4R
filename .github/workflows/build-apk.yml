@@ -32,9 +32,7 @@ jobs:
       - name: 📝 Create local.properties
         run: |
           echo "sdk.dir=$ANDROID_SDK_ROOT" >> local.properties
-          echo "AMADEUS_CLIENT_ID=" >> local.properties
-          echo "AMADEUS_CLIENT_SECRET=" >> local.properties
-          echo "EXCHANGE_API_KEY=${{ secrets.EXCHANGE_API_KEY }}" >> local.properties
+          # No API keys needed — the app uses keyless public APIs.
 
       - name: 🔨 Build Debug APK
         run: gradle assembleDebug --no-daemon --stacktrace

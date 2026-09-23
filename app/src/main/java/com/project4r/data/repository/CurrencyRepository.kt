@@ -12,8 +12,7 @@ import javax.inject.Singleton
 class CurrencyRepository @Inject constructor(
     private val api: CurrencyApi
 ) {
-    // Free tier key — 1,500 requests/month
-    private val apiKey = "ba1d53e257e920d1121e0d18"
+    // Keyless public endpoint — no API key needed, nothing to leak.
 
     private val wantedCodes = listOf("NPR", "USD", "INR", "EUR", "GBP", "JPY")
     private val flagMap = mapOf(
@@ -27,10 +26,11 @@ class CurrencyRepository @Inject constructor(
 
     fun getLiveRates(): Flow<List<CurrencyRate>> = flow {
         try {
-            val resp = api.getRates(apiKey = apiKey)
-            if (resp.result == "success") {
-                val rates = wantedCodes.mapNotNull { code ->
-                    val value = resp.conversion_rates[code] ?: return@mapNotNull null
+            val resp = api.getRates()
+            val rates = resp.rates
+            if (resp.result == "success" && rates != null) {
+                val list = wantedCodes.mapNotNull { code ->
+                    val value = rates[code] ?: return@mapNotNull null
                     val rounded = Math.round(value * 100.0) / 100.0
                     CurrencyRate(
                         code  = code,
@@ -40,7 +40,7 @@ class CurrencyRepository @Inject constructor(
                         trend = "→  Live"
                     )
                 }
-                emit(rates)
+                emit(list)
             } else {
                 emit(SampleRates.list)
             }

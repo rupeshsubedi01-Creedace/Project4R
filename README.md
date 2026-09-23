@@ -33,8 +33,11 @@ Users speak or type naturally — no forms:
 - **Language:** Kotlin
 - **UI:** Jetpack Compose (White & Green design system)
 - **Architecture:** MVVM + Repository pattern
-- **Flight API:** [Amadeus](https://developers.amadeus.com) — free tier
-- **Currency API:** [ExchangeRate-API](https://exchangerate-api.com) — free tier (1,500 req/month)
+- **Flight API:** [SerpAPI](https://serpapi.com) Google Flights via own Vercel backend (live)
+- **Currency API:** [ExchangeRate-API keyless mirror](https://open.er-api.com) — no key needed
+- **Holidays:** [caldays.com](https://caldays.com/api) public holidays — live Nepal holidays on Remind (keyless, CC BY 4.0)
+- **Weather:** [Open-Meteo](https://open-meteo.com) — live destination weather on Route (keyless)
+- **No API keys in the app** — see `local.properties.example`
 - **Calendar:** Gregorian + Bikram Sambat dual-engine
 - **Timezone:** Asia/Dubai (GST UTC+4) ↔ Asia/Kathmandu (NPT UTC+5:45)
 - **Storage:** Room DB (offline cache) + Firebase Firestore

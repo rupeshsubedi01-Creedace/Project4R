@@ -13,16 +13,11 @@ android {
         applicationId "com.project4r"
         minSdk 26
         targetSdk 34
-        versionCode 1
-        versionName "1.0"
-
-        // Load API keys from local.properties
-        def localProps = new Properties()
-        def localPropsFile = rootProject.file('local.properties')
-        if (localPropsFile.exists()) localProps.load(localPropsFile.newDataInputStream())
-        buildConfigField "String", "AMADEUS_CLIENT_ID", '"' + localProps.getProperty('AMADEUS_CLIENT_ID', '') + '"'
-        buildConfigField "String", "AMADEUS_CLIENT_SECRET", '"' + localProps.getProperty('AMADEUS_CLIENT_SECRET', '') + '"'
-        buildConfigField "String", "EXCHANGE_API_KEY", '"' + localProps.getProperty('EXCHANGE_API_KEY', '') + '"'
+        versionCode 2
+        versionName "1.1"
+        // No API keys are bundled. All live data sources are keyless
+        // public APIs (open.er-api.com, caldays.com, open-meteo.com)
+        // or provided by the Vercel backend.
     }
 
     buildTypes {
@@ -61,6 +56,9 @@ dependencies {
     implementation 'com.google.dagger:hilt-android:2.48'
     kapt 'com.google.dagger:hilt-compiler:2.48'
     implementation 'androidx.hilt:hilt-navigation-compose:1.1.0'
+
+    // Gson (explicit — models use @SerializedName)
+    implementation 'com.google.code.gson:gson:2.10.1'
 
     // Retrofit + OkHttp (API calls)
     implementation 'com.squareup.retrofit2:retrofit:2.9.0'

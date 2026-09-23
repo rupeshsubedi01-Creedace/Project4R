@@ -9,7 +9,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
+import com.project4r.data.api.CaldaysHoliday
 import com.project4r.ui.components.NlpInputBar
+import com.project4r.viewmodel.RemindViewModel
 
 data class Reminder(
     val icon: String,
@@ -22,15 +25,16 @@ data class Reminder(
 enum class BadgeType { GREEN, ORANGE, PURPLE }
 
 val sampleReminders = listOf(
-    Reminder("\u2708\uFE0F", "DXB \u2192 KTM Price Drop", "IndiGo \u00b7 below AED 500", "Active", BadgeType.GREEN),
-    Reminder("\uD83C\uDF82", "Mom's Birthday", "Kartik 15, 2083 \u00b7 9:00 AM NPT", "28 days", BadgeType.ORANGE),
-    Reminder("\uD83D\uDD01", "Weekly Price Check", "Every Monday \u00b7 9:00 AM Dubai", "Mon", BadgeType.PURPLE),
-    Reminder("\uD83C\uDF89", "Dashain 2083", "Asoj 29, 2083 \u00b7 Nepal calendar", "38 days", BadgeType.ORANGE),
+    Reminder("\u2708\uFE0F", "DXB → KTM Price Drop", "IndiGo · below AED 500", "Active", BadgeType.GREEN),
+    Reminder("\uD83C\uDF82", "Mom's Birthday", "Kartik 15, 2083 · 9:00 AM NPT", "28 days", BadgeType.ORANGE),
+    Reminder("\uD83D\uDD01", "Weekly Price Check", "Every Monday · 9:00 AM Dubai", "Mon", BadgeType.PURPLE),
+    Reminder("\uD83C\uDF89", "Dashain 2083", "Asoj 29, 2083 · Nepal calendar", "38 days", BadgeType.ORANGE),
 )
 
 @Composable
-fun RemindScreen() {
+fun RemindScreen(viewModel: RemindViewModel = hiltViewModel()) {
     var nlpQuery by remember { mutableStateOf("") }
+    val holidays by viewModel.holidays.collectAsState()
 
     LazyColumn(
         modifier = Modifier.fillMaxSize().padding(16.dp),
@@ -56,6 +60,25 @@ fun RemindScreen() {
         }
         sampleReminders.forEach { reminder ->
             item { ReminderCard(reminder) }
+        }
+
+        if (holidays.isNotEmpty()) {
+            item {
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    // "🇳🇵 Nepal Holidays · Live"
+                    Text("\uD83C\uDDF3\uD83C\uDDF5 Nepal Holidays · Live",
+                        fontWeight = FontWeight.ExtraBold, fontSize = 14.sp)
+                    Text("caldays.com", fontSize = 10.sp,
+                        color = MaterialTheme.colorScheme.outline)
+                }
+            }
+            holidays.take(6).forEach { holiday ->
+                item { HolidayCard(holiday) }
+            }
         }
     }
 }
@@ -92,6 +115,50 @@ fun ReminderCard(reminder: Reminder) {
             }
             Surface(shape = MaterialTheme.shapes.small, color = badgeColor) {
                 Text(reminder.badge, modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
+                    fontSize = 10.sp, fontWeight = FontWeight.Bold)
+            }
+        }
+    }
+}
+
+@Composable
+fun HolidayCard(holiday: CaldaysHoliday) {
+    // "2026-01-14" -> "Jan 14"
+    val parts = holiday.date.split("-")
+    val monthIdx = parts.getOrNull(1)?.toIntOrNull() ?: 0
+    val months = listOf("Jan","Feb","Mar","Apr","May","Jun",
+                        "Jul","Aug","Sep","Oct","Nov","Dec")
+    val niceDate = "${months.getOrElse(monthIdx - 1) { "Jan" }} ${parts.getOrNull(2) ?: ""}"
+
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        elevation = CardDefaults.cardElevation(1.dp)
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Surface(
+                modifier = Modifier.size(40.dp),
+                shape = MaterialTheme.shapes.medium,
+                color = MaterialTheme.colorScheme.secondaryContainer
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    // "📅"
+                    Text("\uD83D\uDCC5", fontSize = 18.sp)
+                }
+            }
+            Column(Modifier.weight(1f)) {
+                Text(holiday.name, fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                Text(holiday.date, fontSize = 11.sp,
+                    color = MaterialTheme.colorScheme.outline)
+            }
+            Surface(
+                shape = MaterialTheme.shapes.small,
+                color = MaterialTheme.colorScheme.secondaryContainer
+            ) {
+                Text(niceDate, modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
                     fontSize = 10.sp, fontWeight = FontWeight.Bold)
             }
         }
