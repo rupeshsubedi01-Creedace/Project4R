@@ -71,6 +71,13 @@ export default async function handler(req, res) {
 
     const data = await serpResp.json();
 
+    // Dev aid: ?debug=1 returns raw SerpAPI groups for inspection
+    if (req.query.debug === '1') {
+      return res.status(200).json({
+        rawGroups: [...(data.best_flights || []), ...(data.other_flights || [])].slice(0, 2)
+      });
+    }
+
     const allGroups = [
       ...(data.best_flights  || []),
       ...(data.other_flights || [])
