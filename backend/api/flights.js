@@ -5,13 +5,11 @@
  * GET /api/flights?origin=DXB&destination=KTM&date=2026-09-26[&trip=round&returnDate=2026-10-03]
  *
  * Strict rules (user-mandated):
- *  - Nepal destinations ONLY (KTM/PKR/BWA/...). Anything else gets an
- *    honest empty result with a note.
+ *  - Nepal destinations ONLY. Anything else gets an honest empty result + note.
  *  - Carriers shown: Nepali national carriers + airlines of the origin
  *    country ("local location airways"). No unrelated foreign carriers.
- *  - trip=oneway (default) or trip=round with returnDate.
- *
- * Uses SerpAPI Google Flights under the hood (type 2 = one-way, 1 = round).
+ *  - trip=oneway (default) or trip=round with returnDate. Round trip uses
+ *    SerpAPI's two-step flow (departure_token) to fetch real return legs.
  */
 
 const NEPAL_AIRPORTS = new Set([
@@ -19,10 +17,7 @@ const NEPAL_AIRPORTS = new Set([
 ]);
 
 export default async function handler(req, res) {
-  if (req.method === 'OPTIONS') {
-    res.status(200).end();
-    return;
-  }
+  if (req.method === 'OPTIONS') { res.status(200).end(); return; }
 
   const {
     origin      = 'DXB',
@@ -53,71 +48,66 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: 'SERPAPI_KEY not set in Vercel environment variables' });
   }
 
+  const serpParams = () => {
+    const p = new URLSearchParams();
+    p.set('engine',       'google_flights');
+    p.set('departure_id', orig);
+    p.set('arrival_id',   dest);
+    p.set('outbound_date', date);
+    if (isRound) p.set('return_date', returnDate);
+    p.set('currency', 'AED');
+    p.set('hl', 'en');
+    p.set('type', isRound ? '1' : '2');
+    p.set('adults', adults);
+    p.set('api_key', serpKey);
+    return p;
+  };
+
+  const callSerp = async (params) => {
+    const r = await fetch(`https://serpapi.com/search?${params}`);
+    if (!r.ok) throw new Error(`SerpAPI error: ${r.status}`);
+    return r.json();
+  };
+
+  const groups = (d) => [...(d.best_flights || []), ...(d.other_flights || [])];
+
   try {
-    const serpUrl = new URL('https://serpapi.com/search');
-    serpUrl.searchParams.set('engine',        'google_flights');
-    serpUrl.searchParams.set('departure_id',  orig);
-    serpUrl.searchParams.set('arrival_id',    dest);
-    serpUrl.searchParams.set('outbound_date', date);
-    if (isRound) serpUrl.searchParams.set('return_date', returnDate);
-    serpUrl.searchParams.set('currency',      'AED');
-    serpUrl.searchParams.set('hl',            'en');
-    serpUrl.searchParams.set('type',          isRound ? '1' : '2');
-    serpUrl.searchParams.set('adults',        adults);
-    serpUrl.searchParams.set('api_key',       serpKey);
+    let flights = [];
 
-    const serpResp = await fetch(serpUrl.toString());
-    if (!serpResp.ok) throw new Error(`SerpAPI error: ${serpResp.status}`);
+    if (!isRound) {
+      const data = await callSerp(serpParams());
+      flights = groups(data).map(g => buildCard(g, g.flights || [], [], g.price, false, nprRate));
+      if (req.query.debug === '1') return res.json({ rawGroups: groups(data).slice(0, 2) });
+      var insights = data.price_insights ?? null;
+    } else {
+      // Step 1: outbound options
+      const outData = await callSerp(serpParams());
+      if (req.query.debug === '1') return res.json({ rawGroups: groups(outData).slice(0, 2) });
+      const local = localCarriers(orig);
+      const outGroups = groups(outData)
+        .filter(g => (g.flights || []).length)
+        .filter(g => carrierAllowed(g.flights[0].airline, local))
+        .sort((a, b) => a.price - b.price)
+        .slice(0, 2); // keep SerpAPI calls bounded (Vercel time limit)
 
-    const data = await serpResp.json();
-
-    // Dev aid: ?debug=1 returns raw SerpAPI groups for inspection
-    if (req.query.debug === '1') {
-      return res.status(200).json({
-        rawGroups: [...(data.best_flights || []), ...(data.other_flights || [])].slice(0, 2)
-      });
-    }
-
-    const allGroups = [
-      ...(data.best_flights  || []),
-      ...(data.other_flights || [])
-    ];
-
-    let flights = allGroups.map((group, idx) => {
-      // SerpAPI flattens outbound+return segments into group.flights.
-      const segs = group.flights || [];
-      let outSegs = segs, retSegs = [];
-      if (isRound) {
-        const cut = segs.findIndex(s => (s.arrival_airport || {}).id === dest);
-        if (cut >= 0) { outSegs = segs.slice(0, cut + 1); retSegs = segs.slice(cut + 1); }
+      for (const og of outGroups) {
+        const token = og.departure_token;
+        if (!token) continue;
+        const p = serpParams();
+        p.set('departure_token', token);
+        const retData = await callSerp(p);
+        const retGroups = groups(retData).filter(g => (g.flights || []).length);
+        if (!retGroups.length) continue;
+        const rg = retGroups.sort((a, b) => a.price - b.price)[0];
+        const total = rg.price >= og.price ? rg.price : og.price + rg.price;
+        flights.push(buildCard(og, og.flights, rg.flights, total, true, nprRate));
       }
-      const firstSeg = outSegs[0];
-      const lastSeg  = outSegs[outSegs.length - 1] || firstSeg;
-
-      const priceAed = group.price;
-      return {
-        id:            `flight_${idx}`,
-        airlineName:   firstSeg.airline,
-        airlineCode:   (firstSeg.flight_number || '--').slice(0, 2),
-        flightNumber:  firstSeg.flight_number,
-        priceAed,
-        priceNpr:      Math.round(priceAed * nprRate),
-        duration:      fmtDur(sumDur(outSegs) || group.total_duration),
-        stops:         stopsLabel(outSegs.length),
-        returnStops:   isRound && retSegs.length ? stopsLabel(retSegs.length) : null,
-        returnDuration:isRound && retSegs.length ? fmtDur(sumDur(retSegs)) : null,
-        isBestDeal:    false,
-        departure: { airport: firstSeg.departure_airport.id, time: firstSeg.departure_airport.time },
-        arrival:   { airport: lastSeg.arrival_airport.id,   time: lastSeg.arrival_airport.time },
-        bookingLinks:  bookingLinksFor(firstSeg.airline),
-        source:        'Google Flights (live)'
-      };
-    }).filter(Boolean);
+      var insights = outData.price_insights ?? null;
+    }
 
     // ---- Strict rule: Nepali carriers + origin-country carriers only ----
     const local = localCarriers(orig);
-    flights = flights.filter(f => isNepaliCarrier(f.airlineName) ||
-      local.some(c => f.airlineName.toLowerCase().includes(c.toLowerCase())));
+    flights = flights.filter(f => carrierAllowed(f.airlineName, local));
 
     flights.sort((a, b) => a.priceAed - b.priceAed);
     if (flights.length) flights[0].isBestDeal = true;
@@ -129,21 +119,19 @@ export default async function handler(req, res) {
       return perAirline[f.airlineName] <= 2;
     });
 
-    // Nepali national carriers (indicative airline-site fares) when they fly this origin
+    // Nepali national carriers (indicative airline-site fares) when they serve this origin
     const nepali = nepaliCarriers(orig, dest, date, nprRate, isRound)
       .filter(nc => !flights.some(f => f.airlineName === nc.airlineName));
     flights = flights.concat(nepali).sort((a, b) => a.priceAed - b.priceAed);
     if (flights.length && !flights.some(f => f.isBestDeal)) flights[0].isBestDeal = true;
 
     return res.status(200).json({
-      origin: orig,
-      destination: dest,
-      date,
+      origin: orig, destination: dest, date,
       returnDate: isRound ? returnDate : null,
       trip: isRound ? 'round' : 'oneway',
-      count:   flights.length,
+      count: flights.length,
       flights,
-      priceInsights: data.price_insights ?? null,
+      priceInsights: insights ?? null,
       note: null
     });
 
@@ -155,20 +143,43 @@ export default async function handler(req, res) {
 
 // ---- Helpers ----
 
+function buildCard(group, outSegs, retSegs, priceAed, isRound, nprRate) {
+  const firstSeg = outSegs[0];
+  const lastSeg  = outSegs[outSegs.length - 1] || firstSeg;
+  return {
+    id:             `flight_${firstSeg.flight_number}_${outSegs.length}_${retSegs.length}`,
+    airlineName:    firstSeg.airline,
+    airlineCode:    (firstSeg.flight_number || '--').slice(0, 2),
+    flightNumber:   firstSeg.flight_number,
+    priceAed,
+    priceNpr:       Math.round(priceAed * (nprRate || 41.68)),
+    duration:       fmtDur(sumDur(outSegs) || group.total_duration),
+    stops:          stopsLabel(outSegs.length),
+    returnStops:    isRound && retSegs.length ? stopsLabel(retSegs.length) : null,
+    returnDuration: isRound && retSegs.length ? fmtDur(sumDur(retSegs)) : null,
+    returnAirline:  isRound && retSegs.length ? retSegs[0].airline : null,
+    isBestDeal:     false,
+    departure: { airport: firstSeg.departure_airport.id, time: firstSeg.departure_airport.time },
+    arrival:   { airport: lastSeg.arrival_airport.id,   time: lastSeg.arrival_airport.time },
+    bookingLinks:  bookingLinksFor(firstSeg.airline),
+    source:        'Google Flights (live)'
+  };
+}
+
 function stopsLabel(n) {
   return n <= 1 ? 'Nonstop' : `${n - 1} stop${n > 2 ? 's' : ''}`;
 }
 function sumDur(segs) {
-  const m = (segs || []).reduce((t, s) => t + (s.duration || 0), 0);
-  return m || 0;
+  return (segs || []).reduce((t, s) => t + (s.duration || 0), 0);
 }
 function fmtDur(mins) {
   if (!mins) return '';
   return `${Math.floor(mins / 60)}h ${mins % 60}m`;
 }
-function isNepaliCarrier(name) {
+function carrierAllowed(name, local) {
   const n = (name || '').toLowerCase();
-  return n.includes('nepal') || n.includes('himalaya');
+  if (n.includes('nepal') || n.includes('himalaya')) return true;
+  return (local || []).some(c => n.includes(c.toLowerCase()));
 }
 
 /** Airlines of the origin country — the "local location airways". */
@@ -201,7 +212,6 @@ function localCarriers(origin) {
  */
 function nepaliCarriers(origin, destination, date, nprRate, isRound) {
   if (!NEPAL_AIRPORTS.has((destination || '').toUpperCase())) return [];
-  // Origins these carriers actually serve
   const network = ['DXB', 'AUH', 'SHJ', 'DOH', 'DEL', 'BOM', 'KUL', 'SIN', 'BKK'];
   if (!network.includes((origin || '').toUpperCase())) return [];
 
@@ -216,6 +226,7 @@ function nepaliCarriers(origin, destination, date, nprRate, isRound) {
     stops,
     returnStops:    isRound ? stops : null,
     returnDuration: isRound ? duration : null,
+    returnAirline:  isRound ? name : null,
     isBestDeal:    false,
     departure: { airport: (origin || 'DXB').toUpperCase(), time: `${date} ` },
     arrival:   { airport: destination, time: `${date} ` },
