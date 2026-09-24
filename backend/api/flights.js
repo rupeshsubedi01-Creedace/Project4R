@@ -124,9 +124,11 @@ export default async function handler(req, res) {
 
 /**
  * Nepali national carriers for KTM routes.
- * Nepal Airlines (RA) and Himalaya Airlines (H9) do not sell DXB-KTM on
- * Google Flights, so they are merged in as clearly-labelled indicative
- * fares (typical DXB-DOH-KTM routing) with direct booking links.
+ * Google Flights does not sell these DXB-KTM sectors, so they are merged
+ * in as clearly-labelled indicative fares taken from each airline's own
+ * booking engine (both operate DXB-KTM nonstop):
+ *  - Nepal Airlines  RA: nonstop 3h45m, from AED 735 (book-nac.crane.aero)
+ *  - Himalaya Airlines H9: nonstop ~4h30m, ~NPR 31,105 ≈ AED 746
  */
 function nepaliCarriers(origin, destination, date, nprRate) {
   if ((destination || '').toUpperCase() !== 'KTM') return [];
@@ -146,8 +148,8 @@ function nepaliCarriers(origin, destination, date, nprRate) {
     source:        `${name} (indicative fare)`
   });
   return [
-    mk(1, 'Nepal Airlines',    'RA', 640, '1 stop · DOH', '7h 05m', '09:40', '17:45'),
-    mk(2, 'Himalaya Airlines', 'H9', 605, '1 stop · DOH', '6h 50m', '11:20', '19:10')
+    mk(1, 'Nepal Airlines',    'RA', 735, 'Nonstop', '3h 45m', '04:10', '09:40'),
+    mk(2, 'Himalaya Airlines', 'H9', 746, 'Nonstop', '4h 30m', '', '')
   ];
 }
 
@@ -176,14 +178,16 @@ function nextFriday() {
 }
 
 function bookingLinksFor(airline) {
-  if (!airline) return ['Wego', 'Google Flights'];
+  // Direct airline booking only — no OTA middlemen like Wego.
+  if (!airline) return ['Google Flights'];
   const a = airline.toLowerCase();
   if (a.includes('indigo'))   return ['IndiGo.com', 'MakeMyTrip'];
   if (a.includes('emirates')) return ['Emirates.com', 'Almosafer'];
-  if (a.includes('flydubai')) return ['FlyDubai.com', 'Wego'];
-  if (a.includes('arabia'))   return ['AirArabia.com', 'Wego'];
-  if (a.includes('jazeera'))  return ['JazeeraAirways.com', 'Wego'];
-  if (a.includes('nepal'))    return ['NepalAirlines.com', 'Wego'];
+  if (a.includes('flydubai')) return ['FlyDubai.com'];
+  if (a.includes('arabia'))   return ['AirArabia.com'];
+  if (a.includes('jazeera'))  return ['JazeeraAirways.com'];
+  if (a.includes('himalaya')) return ['Himalaya-Airlines.com'];
+  if (a.includes('nepal'))    return ['NepalAirlines.com'];
   if (a.includes('air india'))return ['AirIndia.in', 'MakeMyTrip'];
-  return ['Wego', 'Google Flights'];
+  return ['Google Flights'];
 }

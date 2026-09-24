@@ -1,5 +1,7 @@
 package com.project4r.ui.screens
 
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -9,6 +11,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
@@ -23,10 +26,34 @@ import com.project4r.viewmodel.RouteViewModel
 
 @Composable
 fun RouteScreen(viewModel: RouteViewModel = hiltViewModel()) {
-    val flights   by viewModel.flights.collectAsState()
-    val isLoading by viewModel.isLoading.collectAsState()
-    val nlpQuery  by viewModel.nlpQuery.collectAsState()
-    val weather   by viewModel.weather.collectAsState()
+    val flights    by viewModel.flights.collectAsState()
+    val isLoading  by viewModel.isLoading.collectAsState()
+    val nlpQuery   by viewModel.nlpQuery.collectAsState()
+    val weather    by viewModel.weather.collectAsState()
+    val originCity by viewModel.originCity.collectAsState()
+    val originIata by viewModel.originIata.collectAsState()
+
+    val context = LocalContext.current
+    val permLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestMultiplePermissions()
+    ) { grants ->
+        if (grants.values.any { it }) viewModel.detectLocation(context)
+    }
+    LaunchedEffect(Unit) {
+        val granted = context.checkSelfPermission(
+            android.Manifest.permission.ACCESS_FINE_LOCATION
+        ) == android.content.pm.PackageManager.PERMISSION_GRANTED ||
+        context.checkSelfPermission(
+            android.Manifest.permission.ACCESS_COARSE_LOCATION
+        ) == android.content.pm.PackageManager.PERMISSION_GRANTED
+        if (granted) viewModel.detectLocation(context)
+        else permLauncher.launch(
+            arrayOf(
+                android.Manifest.permission.ACCESS_FINE_LOCATION,
+                android.Manifest.permission.ACCESS_COARSE_LOCATION
+            )
+        )
+    }
 
     LazyColumn(
         modifier = Modifier
@@ -45,9 +72,14 @@ fun RouteScreen(viewModel: RouteViewModel = hiltViewModel()) {
                     color = Color(0xFF111827)
                 )
                 Text(
-                    "Dubai → Nepal & beyond",
+                    "$originCity → Nepal & beyond",
                     fontSize = 13.sp,
                     color = Color(0xFF6B7280)
+                )
+                Text(
+                    "📍 from $originIata · auto-detected",
+                    fontSize = 11.sp,
+                    color = Color(0xFF9CA3AF)
                 )
             }
         }

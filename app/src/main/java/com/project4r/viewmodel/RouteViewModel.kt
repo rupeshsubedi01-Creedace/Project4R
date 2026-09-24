@@ -1,5 +1,6 @@
 package com.project4r.viewmodel
 
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.gson.Gson
@@ -9,6 +10,7 @@ import com.project4r.data.model.PricePoint
 import com.project4r.data.repository.FlightRepository
 import com.project4r.data.repository.WeatherRepository
 import com.project4r.nlp.NLPParser
+import com.project4r.util.LocationKit
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -34,6 +36,13 @@ class RouteViewModel @Inject constructor(
     private val _weather = MutableStateFlow<String?>(null)
     val weather: StateFlow<String?> = _weather.asStateFlow()
 
+    // Origin airport — auto-detected from the device's real location,
+    // Dubai until a fix says otherwise.
+    private val _originIata = MutableStateFlow("DXB")
+    val originIata: StateFlow<String> = _originIata.asStateFlow()
+    private val _originCity = MutableStateFlow("Dubai")
+    val originCity: StateFlow<String> = _originCity.asStateFlow()
+
     private val cityNames = mapOf(
         "KTM" to "Kathmandu", "PKR" to "Pokhara", "DXB" to "Dubai",
         "AUH" to "Abu Dhabi", "DEL" to "Delhi", "BOM" to "Mumbai",
@@ -41,7 +50,7 @@ class RouteViewModel @Inject constructor(
     )
 
     init {
-        // Load sample flights on start
+        // Live one-way search on start (origin = detected location or Dubai)
         searchFlights("Cheapest flight to Kathmandu")
     }
 
@@ -49,12 +58,31 @@ class RouteViewModel @Inject constructor(
         _nlpQuery.value = query
     }
 
+    /** Auto-locate: nearest major airport becomes the origin, then re-search. */
+    fun detectLocation(context: Context) {
+        viewModelScope.launch {
+            val airport = LocationKit.detect(context) ?: return@launch
+            if (airport.iata == _originIata.value) return@launch
+            _originIata.value = airport.iata
+            _originCity.value = airport.city
+            val q = _nlpQuery.value
+            val explicitOrigin = NLPParser.parse(q).origin
+            val newQuery = when {
+                q.isBlank() || explicitOrigin == null ->
+                    if (airport.iata == "KTM") "Kathmandu to Dubai" else "${airport.city} to Kathmandu"
+                else -> q
+            }
+            _nlpQuery.value = newQuery
+            searchFlights(newQuery)
+        }
+    }
+
     fun searchFlights(query: String) {
         val destination = NLPParser.parse(query).destination ?: "KTM"
         loadWeather(destination)
         viewModelScope.launch {
             _isLoading.value = true
-            repository.searchFlights(query)
+            repository.searchFlights(query, _originIata.value)
                 .catch { _isLoading.value = false }
                 .collect { results ->
                     _flights.value = results

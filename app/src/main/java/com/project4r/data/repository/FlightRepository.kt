@@ -17,9 +17,9 @@ class FlightRepository @Inject constructor(
      * Live one-way flights only (backend queries Google Flights type=2).
      * No mock data: emits an empty list when nothing real is available.
      */
-    fun searchFlights(nlpQuery: String): Flow<List<FlightOffer>> = flow {
+    fun searchFlights(nlpQuery: String, defaultOrigin: String = "DXB"): Flow<List<FlightOffer>> = flow {
         val intent      = NLPParser.parse(nlpQuery)
-        val origin      = intent.origin      ?: "DXB"
+        val origin      = intent.origin      ?: defaultOrigin
         val destination = intent.destination ?: "KTM"
         val date        = intent.date        ?: TimezoneHelper.nextFridayGST()
 
