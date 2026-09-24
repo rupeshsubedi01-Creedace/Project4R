@@ -27,8 +27,8 @@ object BookingLinks {
             label.contains("Almosafer",true) -> "https://www.almosafer.com/"
             label.contains("AirArabia",true) -> "https://www.airarabia.com/"
             label.contains("Jazeera",  true) -> "https://www.jazeeraairways.com/"
-            label.contains("Nepal",    true) -> "https://nepalairlines.com.np/"
-            label.contains("Himalaya", true) -> "https://www.himalaya-airlines.com/"
+            label.contains("Himalaya", true) -> "https://book-himalaya-airlines.crane.aero/"
+            label.contains("Nepal",    true) -> "https://book-nac.crane.aero/"
             label.contains("Kiwi",     true) -> "https://www.kiwi.com/"
             label.contains("Cleartrip",true) -> "https://www.cleartrip.com/"
             label.contains("Skyscanner",true)-> skyscanner

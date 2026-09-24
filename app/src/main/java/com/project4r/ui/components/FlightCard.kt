@@ -93,6 +93,13 @@ fun FlightCard(flight: FlightOffer) {
                                 color = Color(0xFF6B7280)
                             )
                         }
+                        if (flight.returnStops != null) {
+                            Text(
+                                "↩ ${flight.returnStops} · ${flight.returnDuration}",
+                                fontSize = 12.sp,
+                                color = Color(0xFF6B7280)
+                            )
+                        }
                     }
                 }
 

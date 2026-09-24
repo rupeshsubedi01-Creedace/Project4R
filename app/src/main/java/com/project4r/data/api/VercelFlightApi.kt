@@ -6,7 +6,6 @@ import retrofit2.http.Query
 /**
  * Project 4R Vercel backend API.
  * Live deployment: https://project4-r.vercel.app/  (see VERCEL_BASE_URL in AppModule.kt)
- * Note: the old project4r-api.vercel.app deployment no longer exists.
  */
 
 data class VercelFlightResponse(
@@ -15,7 +14,10 @@ data class VercelFlightResponse(
     val date: String,
     val count: Int,
     val flights: List<VercelFlight>,
-    val priceInsights: VercelPriceInsights?
+    val priceInsights: VercelPriceInsights?,
+    val note: String? = null,
+    val trip: String? = null,
+    val returnDate: String? = null
 )
 
 data class VercelFlight(
@@ -27,6 +29,8 @@ data class VercelFlight(
     val priceNpr: Int,
     val duration: String,
     val stops: String,
+    val returnStops: String? = null,
+    val returnDuration: String? = null,
     val isBestDeal: Boolean,
     val departure: VercelEndpoint,
     val arrival: VercelEndpoint,
@@ -50,6 +54,8 @@ interface VercelFlightApi {
         @Query("origin")      origin: String,
         @Query("destination") destination: String,
         @Query("date")        date: String,
+        @Query("trip")        trip: String,
+        @Query("returnDate")  returnDate: String,
         @Query("adults")      adults: Int = 1
     ): VercelFlightResponse
 }

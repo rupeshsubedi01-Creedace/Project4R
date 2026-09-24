@@ -8,6 +8,8 @@ data class FlightOffer(
     val priceNpr: Int,
     val duration: String,
     val stops: String,
+    val returnStops: String? = null,
+    val returnDuration: String? = null,
     val bookingLinks: List<String>,
     val isBestDeal: Boolean = false,
     val departureTime: String = "",

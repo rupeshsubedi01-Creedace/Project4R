@@ -52,4 +52,9 @@ class UserPreferences @Inject constructor(
     var priceHistoryJson: String
         get() = prefs.getString("price_history", "[]") ?: "[]"
         set(value) = prefs.edit().putString("price_history", value).apply()
+
+    // JSON array of user-created holiday reminders
+    var remindersJson: String
+        get() = prefs.getString("reminders", "[]") ?: "[]"
+        set(value) = prefs.edit().putString("reminders", value).apply()
 }
